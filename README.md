@@ -1,4 +1,4 @@
-# lammy [![Live Tests](https://github.com/aleph0io/lammy/actions/workflows/live-tests.yml/badge.svg)](https://github.com/aleph0io/lammy/actions/workflows/live-tests.yml) [![CodeQL](https://github.com/aleph0io/lammy/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/aleph0io/lammy/actions/workflows/github-code-scanning/codeql)
+# lammy [![Live Tests](https://github.com/aleph0io/lammy/actions/workflows/live-tests.yml/badge.svg)](https://github.com/aleph0io/lammy/actions/workflows/live-tests.yml) [![CodeQL](https://github.com/aleph0io/lammy/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/aleph0io/lammy/actions/workflows/github-code-scanning/codeql) ![Maven Central Version](https://img.shields.io/maven-central/v/io.aleph0/lammy-core) [![javadoc](https://javadoc.io/badge2/io.aleph0/lammy-core/javadoc.svg)](https://javadoc.io/doc/io.aleph0/lammy-core) 
 
 Lammy is a microframework for building AWS Lambda functions in Java 8+.
 
