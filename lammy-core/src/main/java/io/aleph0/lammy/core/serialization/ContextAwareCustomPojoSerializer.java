@@ -27,9 +27,10 @@ import com.amazonaws.services.lambda.runtime.CustomPojoSerializer;
 
 /**
  * Dear Amazon, please add the {@link Context} to the {@link CustomPojoSerializer} interface
- * {@link #fromJson(InputStream, Type)} and {@link #toJson(Object, OutputStream, Type)} methods so
- * we can use it in our serializers. Just in case there was some serializer that needed it. Like
- * maybe the built-in {@link PlatformCustomPojoSerializer}. Or something. Hypothetically.
+ * {@link CustomPojoSerializer#fromJson(InputStream, Type)} and
+ * {@link CustomPojoSerializer#toJson(Object, OutputStream, Type)} methods so we can use it in our
+ * serializers. Just in case there was some serializer that needed it. Like maybe the built-in
+ * {@link PlatformCustomPojoSerializer}. Or something. Hypothetically.
  */
 public interface ContextAwareCustomPojoSerializer {
   public static ContextAwareCustomPojoSerializer fromCustomPojoSerializer(
