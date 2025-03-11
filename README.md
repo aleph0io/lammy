@@ -12,126 +12,139 @@ Lammy is a microframework for building AWS Lambda functions in Java 8+.
 * Provide implementations of common use cases (e.g., "copy file to S3")
 * Build a framework for microservices in general (i.e., don't rebuild [Quarkus](https://quarkus.io/) or [Micronaut](https://micronaut.io/))
 
+## Quickstart
+
+To create a simple Lambda function with Lammy, add the following dependency to your project:
+
+    <dependency>
+        <groupId>io.aleph0</groupId>
+        <artifactId>lammy-core</artifactId>
+        <version>1.0.0-B0</version>
+    </dependency>
+    
+Next, add the following code to your project:
+
+    /**
+     * The JSON-serializable request object
+     */
+    public class Request {
+      private String name;
+        
+      public String getName() {
+        return name;
+      }
+        
+      public void setName(String name) {
+        this.name = name;
+      }
+    }
+    
+    /**
+     * The JSON-serializable response object
+     */
+    public class Response {
+      private String greeting;
+        
+      public String getGreeting() {
+        return greeting;
+      }
+        
+      public void setGreeting(String greeting) {
+        this.greeting = greeting;
+      }
+    }
+    
+    /**
+     * The lambda function implementation
+     */
+    public class ExampleLambdaFunction
+        extends BeanLambdaProcessorBase<Request, Response> {
+      @Override
+      public Response handleBeanRequest(Request request, Context context) {
+        if(request.getName() == null)
+          throw new IllegalArgumentException("name is required");
+      
+          final String name = request.getName();
+          
+          final String greeting = "Hello, " + getName() + "!";
+          
+          final Response response=new Response();
+          response.setGreeting(greeting);
+          
+          return response;
+      }
+    }
+    
+Congratulations! You have created a working AWS Lambda function.
+
 ## Design Philosophy
 
 Lammy's design is heavily influenced by [JAX-RS](https://jakarta.ee/specifications/restful-ws/). Specifically, the framework implement a straightforward, mechanical control flow that centralizes business logic while exposing hooks that libraries and applications can use for things like customization, serialization, exception handling, and so on. Hopefully, Lammy's design feels clear and familiar.
 
-## Examples
+## Model
 
-Here are some simple examples to illustrate how Lammy works:
+Lammy uses the following terms to talk about Lambda functions.
 
-### Hello World
+### Logical function styles
 
-This function takes a name and gives a gretting provided by an environment variable:
+There are two logical function styles:
 
-    public class HelloWorldFunction extends JacksonBeanLambdaFunctionBase<GreetingRequest,GreetingResponse> {
-        public static final String GREETING=getenv("GREETING").orElse("Hello");
+* Processor -- a Lambda function that takes an input and produces an output. Example: Given an entity ID, fetch the corresponding entity from a data store and return it.
+* Consumer -- a Lambda function that takes an input, but produces no logical output. (Of course, all Lambda functions must return an output per the Lambda API, but consumer outputs are semantically void.) Example: Given an entity update, apply the given update to a data store, then exit.
 
-        @Override
-        public GreetingResponse handleBeanRequest(GreetingRequest request, Context context) {
-            return new GreetingResponse(String.format("%s, %s!", GREETING, request.name()));
-        }
-    }
+### Implementation function styles
 
-    record GreetingRequest(String name) {}
+#### Stream functions
 
-    record GreetingResponse(String greeting) {}
+A "stream function" is any AWS Lambda function that operates on byte streams (e.g., `InputStream` and `OutputStream`).  These correspond to [`RequestStreamHandler`](https://javadoc.io/doc/com.amazonaws/aws-lambda-java-core/latest/com/amazonaws/services/lambda/runtime/RequestStreamHandler.html) functions.
 
-The framework provides [Jackson](https://github.com/FasterXML/jackson) serialization out of the box and provides serialization for input and output types automatically. Of course, applications can also specialize or customize serialization as desired using custom serializers, either with or without Jackson.
+Stream-style functions support **interceptors**, which are plugin-style objects that can pre-process function input streams and post-process function output streams, for example to perform base64 encoding and decoding.
 
-Additionally, the framework provides some utility methods for configuration using environment variables, such as `getenv` shown here, which returns an `OptionalEnvironmentVariable`.
+Additionally, stream-style functions support **exception writers**, which are plugin-style objects that act as exception handlers for specific exception types. An exception writer can propagate the exception, which is treated as an error by the Lambda runtime; throw a different exception, which is treated as an error by the Lambda runtime; or write a message to the output stream, which is treated as a success by the Lambda runtime.
 
-## Supported Lambda Function Varieties
+Lammy provides `StreamLambdaProcessorBase` and `StreamLambdaConsumerBase` for processor and consumer stream-style functions, respectively.
 
-### Logical Function Types
+#### Bean functions
 
-Lammy supports two logical types of Lambda functions:
+A "bean function" is any AWS Lambda function that operates on de/serialized Java bean objects (POJOs) as input/output, as opposed to streams where the serialization is handled inside the Lambda runtime. These correspond to [`RequestHandler`](https://javadoc.io/doc/com.amazonaws/aws-lambda-java-core/latest/com/amazonaws/services/lambda/runtime/RequestHandler.html) functions.
 
-* `Function` -- A Lambda function with an input and an output
-* `Consumer` -- A Lambda function with an input and a constant, empty output
+Bean-style functions support **filters**, which are plugin-style objects that can pre-process function inputs and post-process function outputs, for example to perform object validation.
 
-### Implementation Styles
+Additionally, bean-style functions support **exception mappers**, which are plugin-style objects that act as exception handlers for specific exception types. An exception writer can propagate the exception, which is treated as an error by the Lambda runtime; throw a different exception, which is treated as an error by the Lambda runtime; or return a message of the same type as the function response type, which is then handled as the function output and treated as a success by the Lambda runtime.
 
-Similarly, Lammy supports two implementation styles of Lambda functions:
+Lammy provides `BeanLambdaProcessorBase` and `BeanLambdaConsumerBase` for processor and consumer bean-style functions, respectively.
 
-* `Stream` -- A Lambda function implementation with business logic implemented using byte stream inputs and outputs
-* `Bean` -- A Lambda function implementation with business logic implemented using POJO inputs and outputs
+#### Streamed bean functions
 
-## Anatomy of a Lambda Function
+A "streamed bean function" is any AWS Lambda function that operates on de/serialized Java bean objects (POJOs) as input/output as opposed to streams where the serialization is handled in the function implementation itself. The implementation uses a stream-style [`RequestStreamHandler`](https://javadoc.io/doc/com.amazonaws/aws-lambda-java-core/latest/com/amazonaws/services/lambda/runtime/RequestStreamHandler.html) to interface with the Lambda runtime, then performs serialization to expose a bean-style programming interface for the user.
 
-This section describes the framework's design in terms of three cooperating entities:
+Because they perform their serialization manually, streamed bean-style functions support both interceptors and filters. This gives users maximum control over how I/O is encoded over the wire and how objects are de/serialized for processing.
 
-1. `Application` -- The user's Lambda function
-2. `Framework` -- The Lammy microframework
-3. `Runtime` -- The AWS Lambda runtime
+Streamed bean functions also support exception mappers.
 
-### Stream Function
+Lammy provides `StreamedBeanLambdaProcessorBase` and `StreamedBeanLambdaConsumerBase` for processor and consumer bean-style functions, respectively.
 
-A stream-style function has the following steps:
+## Service loading
 
-    ┌─────┐   ┌───────────┐   ┌─────────┐   ┌───────────┐   ┌──────┐
-    │Input│   │  Request  │   │ Request │   │ Response  │   │Output│
-    │  1  ├──►│     2     ├──►│    3    ├──►│     4     ├──►│  5   │
-    │Bytes│   │Interceptor│   │ Handler │   │Interceptor│   │Bytes │
-    └─────┘   └───────────┘   └─────────┘   └───────────┘   └──────┘
+Lammy makes heavy use of Java's `ServiceLoader` to simplify the developer's life. The following types can all be loaded automatically using the `ServiceLoader`:
 
-1. The framework consumes a byte stream from the runtime as input
-2. The application can optionally register one or more "request interceptor" objects to preprocess the input byte stream, which the framework then runs in the order they were registered
-3. The framework calls the application's request handler, which consumes the (optionally preprocessed) input bytes and produces output bytes according to the application's business logic
-4. The application can optionally register one or more "response interceptor" objects to postprocess the output byte stream, which the framework then runs in the order they were registered
-5. The framework produces the byte stream to the runtime as output
+* `CustomPojoSerializer` -- For bean functions and streamed bean functions
+* `ContextAwareCustomPojoSerializer` -- For streamed bean functions
+* `RequestFilter`, `ResponseFilter` -- For bean functions and streamed bean functions
+* `InputInterceptor`, `OutputInterceptor` -- For stream functions and streamed bean functions
+* `ExceptionWriter` -- For stream functions
+* `ExceptionMapper` -- For bean functions and streamed bean functions
 
-### Bean Function
+The `CustomPojoSerializer` and `ContextAwareCustomPojoSerializer` objects are always loaded automatically if present.
 
-A bean-style function has the following steps:
+To load all other objects automatically via `ServiceLoader`, the user must do one of two things:
 
-                                     ┌────────────┐   ┌───────────┐   ┌──────────┐   ┌───────────┐   ┌──────────┐
-                                     │  Request   │   │  Request  │   │ iii Bean │   │ Response  │   │ Response │
-                                 ┌──►│     i      ├──►│    ii     ├──►│ Request  ├──►│    iv     ├──►│    v     ├───┐
-                                 │   │Deserializer│   │  Filter   │   │ Handler  │   │  Filter   │   │Serializer│   │
-                                 │   └────────────┘   └───────────┘   └──────────┘   └───────────┘   └──────────┘   │
-                                 │                                                                                  │
-                                 │                                                                                  │
-                                 │                                                                                  ▼
-    ┌─────┐   ┌───────────┐   ┌──┴─────────────────────────────────────────────────────────────────────────────────────┐   ┌───────────┐   ┌──────┐
-    │Input│   │  Request  │   │                                             3                                          │   │ Response  │   │Output│
-    │  1  ├──►│     2     ├──►│                                   Stream Request Handler                               ├──►│     4     ├──►│  5   │
-    │Bytes│   │Interceptor│   │                                                                                        │   │Interceptor│   │Bytes │
-    └─────┘   └───────────┘   └────────────────────────────────────────────────────────────────────────────────────────┘   └───────────┘   └──────┘
+* Set the environment variable `LAMMY_AUTOLOAD_ALL=TRUE`
+* Set individual types to autoload using function base's corresponding configuration object (e.g., `BeanLambdaProcessorConfiguration`) in the function's constructor
 
-The framework implements bean-style functions using stream-style functions, so the easiest way to understand bean-style functions is as a layer "on top of" stream-style functions.
+## A note on building
 
-1. The framework consumes a byte stream from the runtime as input
-2. The application can optionally register one or more "request interceptor" objects to preprocess the input byte stream, which the framework then runs in the order they were registered
-3. The framework calls the application's request handler, which consumes the (optionally preprocessed) input bytes and produces output bytes according to the application's business logic
-    1. The application registers a "request deserializer" object, which converts the (optionally preprocessed) input bytes into a bean of the input type
-    2. The application can optionally register one or more "request filter" objects to preprocess the input bean, which the framework then runs in the order they were registered
-    3. The framework calls the application's request handler, which consumes the (optionally preprocessed) input bean and produces a bean of the output type according to the application's business logic
-    4. The application can optionally register one or more "response filter" objects to postprocess the output bean, which the framework then runs in the order they were registered
-    5. The application registers a "response serializer" object, which converts the (optionally postprocessed) output bean into output bytes
-5. The application can optionally register one or more "response interceptor" objects to postprocess the output byte stream, which the framework then runs in the order they were registered
-6. The framework produces the byte stream to the runtime as output
-
-### Exception Mappers
-
-The application can also optionally register one or more "exception mapper" objects, which are responsible for converting an exception into a byte stream or output bean for stream-style and bean-style functions, respectively.
-
-If the application propagates an exception at any step, then the framework will capture the exception and look for a matching exception mapper. If the framework finds a matching exception mapper, then the exception mapper is used to generate a successful response to the runtime. If the framework cannot find a matching exception mapper, then the framework propagates the exception to the runtime, which then produces a failure response using [its default serialization format](https://docs.aws.amazon.com/lambda/latest/dg/java-exceptions.html#java-exceptions-createfunction):
-
-    {
-        "errorMessage": "Input must be a list that contains 2 numbers.",
-        "errorType":"java.lang.InputLengthException",
-        "stackTrace": [
-            "example.HandlerDivide.handleRequest(HandlerDivide.java:23)",
-            "example.HandlerDivide.handleRequest(HandlerDivide.java:14)"
-        ]
-    }
-
-Unfortunately, the runtime does not offer a way for applications to generate an error response with a custom serialization format.
-
-## Building
-
-When building, you may notice tests failing, especially with timeout messages indicating that LocalStack has stopped responding to requests. Try running the offending tests individually like this:
+When building lammy from source, you may notice tests failing, especially with timeout messages indicating that LocalStack has stopped responding to requests. Try running the offending tests individually like this:
 
     JAVA_HOME="/Library/Java/JavaVirtualMachines/amazon-corretto-8.jdk/Contents/Home" mvn -pl lammy-test test -Dtest='BeanLambdaFunctionIntegrationTest#givenExceptionMapperServicesAB_whenAutoloadExplicitlyEnabledAndThrowNonMatching_thenPropagate
 
