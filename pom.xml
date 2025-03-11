@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.aleph0</groupId>
     <artifactId>lammy-project</artifactId>
-    <version>1.0.0-B0</version>
+    <version>1.0.0-B1-SNAPSHOT</version>
     <name>lammy-project</name>
     <description>
         Microframework for building AWS Lambda functions in Java 8+
@@ -21,7 +21,7 @@
         <connection>scm:git:ssh://git@github.com/aleph0io/lammy.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/aleph0io/lammy.git</developerConnection>
         <url>https://github.com/aleph0io/lammy/tree/main</url>
-        <tag>v1.0.0-B0</tag>
+        <tag>HEAD</tag>
     </scm>
     <licenses>
         <license>

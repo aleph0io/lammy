@@ -3,7 +3,7 @@
     <parent>
         <groupId>io.aleph0</groupId>
         <artifactId>lammy-lambda-bom</artifactId>
-        <version>1.0.0-B0</version>
+        <version>1.0.0-B1-SNAPSHOT</version>
         <relativePath>../lammy-lambda-bom</relativePath>
     </parent>
     <artifactId>lammy-dependencies-bom</artifactId>

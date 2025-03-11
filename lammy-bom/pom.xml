@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.aleph0</groupId>
         <artifactId>lammy-project</artifactId>
-        <version>1.0.0-B0</version>
+        <version>1.0.0-B1-SNAPSHOT</version>
     </parent>
     
     <artifactId>lammy-bom</artifactId>
@@ -20,17 +20,17 @@
             <dependency>
                 <groupId>io.aleph0</groupId>
                 <artifactId>lammy-core</artifactId>
-                <version>1.0.0-B0</version>
+                <version>1.0.0-B1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>io.aleph0</groupId>
                 <artifactId>lammy-jackson-serialization</artifactId>
-                <version>1.0.0-B0</version>
+                <version>1.0.0-B1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>io.aleph0</groupId>
                 <artifactId>lammy-hibernate-validation</artifactId>
-                <version>1.0.0-B0</version>
+                <version>1.0.0-B1-SNAPSHOT</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
