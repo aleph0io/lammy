@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.aleph0</groupId>
     <artifactId>lammy-project</artifactId>
-    <version>0.0.0-B0</version>
+    <version>0.0.0-B1-SNAPSHOT</version>
     <name>lammy-project</name>
     <description>
         Microframework for building AWS Lambda functions in Java 8+
