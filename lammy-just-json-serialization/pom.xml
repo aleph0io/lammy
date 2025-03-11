@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.aleph0</groupId>
         <artifactId>lammy-parent</artifactId>
-        <version>1.0.0-B0-SNAPSHOT</version>
+        <version>1.0.0-B0</version>
         <relativePath>../lammy-parent</relativePath>
     </parent>
 
